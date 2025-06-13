@@ -2,8 +2,8 @@ import { element } from "./element.js";
 import { game } from "./engine.js";
 
 export class entity extends element {
-    constructor(Name,x,y,renderer,hitbox,properties){
-        super(Name,x,y,renderer,hitbox,properties);
+    constructor(Name,x,y,renderer,hitbox,properties,...allNodes){
+        super(Name,x,y,renderer,hitbox,properties,...allNodes);
     }
     setup(){
         let hI;

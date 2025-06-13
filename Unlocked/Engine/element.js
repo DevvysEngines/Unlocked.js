@@ -4,6 +4,10 @@ import { render } from "./render.js";
 import { utils } from "./utils.js";
 
 export class element{
+    #nodeScopes = {
+        "node": "insertNode"
+        ,"eventNode": "insertEventNode"
+    }
     #scopes = {
         "properties": ()=> this.#properties
         ,"renderer": ()=> this.#renderer
@@ -29,13 +33,14 @@ export class element{
         ,radius:15
         ,roundedness:0
         ,color:[0,0,0]
-        ,rotation:[0,0,0]
+        ,rotation:0
         ,transparency: 1
     };
     #hitbox = {
         type:`box`
         ,x:0
         ,y:0
+        ,rotation:0
         ,width:30
         ,height:30
         ,radius:15
@@ -47,7 +52,7 @@ export class element{
     };
     #vx=0;
     #vy=0;
-    constructor(Name,x,y,renderer,hitbox,properties){
+    constructor(Name,x,y,renderer,hitbox,properties,...allNodes){
         this.Name = Name;
         this.x = x;
         this.y = y;
@@ -57,9 +62,22 @@ export class element{
         this.#properties.id = Symbol(Name);
         this.setup();
 
-        for (let i in eventNode.system_presets){
-            this.insertEventNode(eventNode.system_presets[i]);
+        if (allNodes.length>0){
+            let setup = allNodes.pop();
+            if (typeof setup != `function`){
+                allNodes.push(setup);
+                setup = false;
+            }
+            allNodes.forEach((node)=>{
+                let scope = this.#nodeScopes[node[0].type];
+                this[scope](...node);
+            })
+            if (setup){
+                setup(this);
+            }
         }
+
+        this.insertMultipleNodes(...eventNode.system_presets.element);
     }
     get color(){
         return utils.giveColorWithTables(this.#renderer.color,this.#renderer.transparency);
@@ -224,6 +242,14 @@ export class element{
         this.set(...eventpath,renode);
         this.#reactionsList[renode.listLocation] = renode;
     }
+    insertMultipleNodes(...allNodes){
+        if (allNodes.length>0){
+            allNodes.forEach((node)=>{
+                let scope = this.#nodeScopes[node[0].type];
+                this[scope](...node);
+            })
+        }
+    }
     deleteEventNode(event){
         this.delete("reactions",...event.node.path,"events",event.eventLocation);
         delete this.#reactionsList[event.listLocation];
@@ -250,11 +276,11 @@ export class element{
         let id = Symbol(`node`);
         let renode = {
             node
-            ,data
+            ,data: data ?? []
             ,id
             ,active:true
         }
-        let app = node.onApply({element:this,key:renode},...data);
+        let app = node.onApply({element:this,key:renode},...renode.data);
         if (app!=undefined){
             if (app){
                for (let i in app){

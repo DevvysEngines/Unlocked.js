@@ -8,5 +8,6 @@ export class node{
         this.onFinished = onFinished;
         this.Name = Name;
         this.tags = tags;
+        this.type = `node`;
     }
 }

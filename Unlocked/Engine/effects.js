@@ -7,6 +7,7 @@ export class effect {
         this._onFinished = onFinished;
         this.Name = Name;
         this.tags = tags;
+        this.type = `node`;
     }
     onApply({key:node,element},...info){
         info[0]*=1000;
@@ -16,7 +17,8 @@ export class effect {
     update({element,key},delta,duration,...info){
         if (!key.active)return;
         let active = true;
-        this._update({element,key},delta,...info);
+        let reapp = this._update({element,key},delta,...info);
+        if (reapp)info=reapp;
         duration-=1*delta;
         if (duration<=0){
             element.deleteNode({node:key.node,id:key.id,data:[duration,...info]});
