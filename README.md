@@ -1,6 +1,6 @@
 Hello!
 
-unlocked.js, is like a customizable pair of wings that help you soar throughout your io game devloping journey.
+Unlocked.js, is like a customizable pair of wings that help you soar throughout your io game devloping journey.
 It doesn't lock you into specific workflows, like big engines do(Unity,Unreal,etc.).
 This engine hopes to work with you, and not the other way around!
 
