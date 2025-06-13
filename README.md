@@ -1,4 +1,6 @@
-Hello!
+## Unlocked
+
+> **"Sometimes you have to dive deep to fly higher, unless your nest has propellers."**
 
 Unlocked.js, is like a customizable pair of wings that help you soar throughout your io game devloping journey.
 It doesn't lock you into specific workflows, like big engines do(Unity,Unreal,etc.).
