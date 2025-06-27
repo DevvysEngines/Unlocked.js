@@ -1,6 +1,6 @@
 ## Unlocked(In Progress)
 
-> **"Sometimes you have to dive to fly higher—unless your nest has propellers."**
+> **"Sometimes you have to dive to soar higher—unless you have an engine."**
 
 Unlocked.js, is like a customizable pair of wings that help you soar throughout your IO game devlopment journey.
 It doesn't lock you into specific workflows, like big engines do(Unity,Unreal,etc.).
