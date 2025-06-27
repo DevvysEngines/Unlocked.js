@@ -1,4 +1,5 @@
 import { node } from "./node.js"
+import { utils } from "./utils.js";
 
 export class effect {
     constructor(Name=`Effect`,tags=[],onApply=()=>{},update=(element,delta)=>{},onFinished=()=>{}){
@@ -6,7 +7,7 @@ export class effect {
         this._update = update;
         this._onFinished = onFinished;
         this.Name = Name;
-        this.tags = tags;
+        this.tags = utils.normalizePath(tags);
         this.type = `node`;
     }
     onApply({key:node,element},...info){

@@ -21,13 +21,19 @@ export class element{
     isDestroyed=false;
     #nodes = new Map();
     #properties = {
-        id:null
+        x:0
+        ,y:0
+        ,id:null
         ,chunk:{x:0,y:0}
+        ,ui: false
+        ,inUi: false
     };
     #reactions={};
     #reactionsList = [];
     #renderer = {
         type:`box`
+        ,x:0
+        ,y:0
         ,width:30
         ,height:30
         ,radius:15
@@ -50,16 +56,11 @@ export class element{
         ,down:false
         ,dragging:false
     };
-    #vx=0;
-    #vy=0;
-    constructor(Name,x,y,renderer,hitbox,properties,...allNodes){
-        this.Name = Name;
-        this.x = x;
-        this.y = y;
+    constructor(properties,renderer,hitbox,...allNodes){
         Object.assign(this.#properties,properties);
         Object.assign(this.#renderer,renderer);
         Object.assign(this.#hitbox,hitbox)
-        this.#properties.id = Symbol(Name);
+        this.#properties.id = Symbol();
         this.setup();
 
         if (allNodes.length>0){
@@ -79,6 +80,15 @@ export class element{
 
         this.insertMultipleNodes(...eventNode.system_presets.element);
     }
+    get Name(){
+        return this.#properties.Name;
+    }
+    get x(){
+        return this.#properties.x;
+    }
+    get y(){
+        return this.#properties.y;
+    }
     get color(){
         return utils.giveColorWithTables(this.#renderer.color,this.#renderer.transparency);
     }
@@ -96,9 +106,18 @@ export class element{
         }
     }
     get dime(){
-        const camera = game.currentscene.camera;
-        const tomappos = utils.tomap(this.x,this.y);
         const r = this.#renderer
+        if (this.#properties.ui){
+            return {
+                x: Math.round(this.#properties.x+r.x)
+                ,y: Math.round(this.#properties.y+r.y)
+                ,width: Math.round(r.width)
+                ,height: Math.round(r.width)
+                ,radius: Math.round(r.radius)
+            }
+        }
+        const camera = game.currentscene.camera;
+        const tomappos = utils.tomap(this.#properties.x+r.x,this.#properties.y+r.y);
         return {
             x: Math.round(tomappos.x)
             ,y: Math.round(tomappos.y)
@@ -124,101 +143,71 @@ export class element{
             case `box`:
             if (
                 x>hd.x-hd.width/2
-                &&x<hd.x+hd.width
-                &&y<hd.y+hd.height
-                &&y>hd.y-hd.height
+                &&x<hd.x+hd.width/2
+                &&y<hd.y+hd.height/2
+                &&y>hd.y-hd.height/2
             ) return true;
-        }
-    }
-    addVelocity(x,y){
-        this.#vx+=x;
-        this.#vy+=y;
-    }
-    changeVelocity(x,y){
-        this.#vx=x;
-        this.#vy=y;
-    }
-    changePosition(x,y){
-        const chunk = game.currentscene.locateChunkByPos(x,y)
-        if (!chunk)console.log(x,y)
-        const chunkpos = {x:chunk.pos.x,y:chunk.pos.y};
-        const mychunkpos = this.#properties.chunk;
-        this.x = x;
-        this.y = y;
-        if (chunkpos.x!=mychunkpos.x||chunkpos.y!=mychunkpos.y){
-            this.chunk.removeElement(this);
-            chunk.addElement(this);
         }
     }
     render(ctx){
         if (this.isDestroyed)return;
-        //ctx.beginPath();
         const dime = this.dime;
         ctx.save();
         ctx.translate(dime.x,dime.y);
         render[this.#renderer.type].render(ctx,this);
-        //ctx.closePath();
         ctx.restore();
     }
-    get(centeral,...path){
-        centeral = this.#scopes[centeral]?.();
-        let current = centeral;
+    get(...path){
+        path = utils.normalizePath(path);
+        let centeral = path.shift();
+        let current = this.#scopes[centeral]?.();
         for (let i in path){
-            if (current[path[i]]===undefined)return undefined;
+            if (current[path[i]]===undefined)return false;
             current = current[path[i]];
         }
         return current;
     }
-    set(centeral,...path){
-        let value = path.pop();
-        let oldvalue;
-        let centi = this.#scopes[centeral]?.();
-        let current = centi;
-        for (let i = 0; i<path.length-1; i++){
-            if (!current[path[i]])current[path[i]] = {};
-            current = current[path[i]];
-        }
-        oldvalue = current[path[path.length-1]];
-        current[path[path.length-1]] = value;
+    set(...path){
+        let [value,oldvalue,centeral,...newpath] = this.system_set(...path);
+        path = newpath;
         if (oldvalue==value)return;
-        let eventpath = [...path];
-        let events = this.get("reactions",centeral,...eventpath,"events");
-        if (events){
-            for (let e in events){
-                let event = events[e];
-                if (event.node.condition(oldvalue,value)){
-                    event.node.trigger({element:this,key:event},[oldvalue,value],...event.info);
-                    if (event.node.triggerTimes){
-                        event.node.triggerTimes--;
-                        if (event.node.triggerTimes<=0){
-                            this.deleteEventNode(event);
-                        }
-                    }
-                }
-            }
+        let events = this.get("reactions",centeral,...path,"events");
+        if (!events)return;
+        for (let e in events)
+        {
+            let event = events[e];
+            if (!event.node.condition(oldvalue,value))continue;
+            event.node.trigger({element:this,key:event},[oldvalue,value],...event.info);
+            if (!event.node.triggerTimes)continue;
+            event.node.triggerTimes--;
+            if (event.node.triggerTimes>0)continue;
+            this.deleteEventNode(event);
         }
     }
-    delete(centeral,...path){
-        let centi = this.#scopes[centeral]?.();
-        let current = centi;
+    delete(...path){
+        path = utils.normalizePath(path);
+        let centeral = path.shift();
+        let current = this.#scopes[centeral]?.();
         for (let i = 0; i<path.length-1; i++){
-            if (current[path[i]]===undefined)return undefined;
+            if (current[path[i]]===undefined)return false;
             current = current[path[i]];
         }
         current[path[path.length-1]];
         delete current[path[path.length-1]];
     }
-    system_set(centeral,...path){
+    system_set(...path){
         let value = path.pop();
         let oldvalue;
-        let centi = this.#scopes[centeral]?.();
-        let current = centi;
+        path = utils.normalizePath(path);
+        let centeral = path.shift();
+        let current = this.#scopes[centeral]?.();
         for (let i = 0; i<path.length-1; i++){
             if (!current[path[i]])current[path[i]] = {};
             current = current[path[i]];
         }
         oldvalue = current[path[path.length-1]];
         current[path[path.length-1]] = value;
+        return [value, oldvalue, centeral, ...path];
     }
     insertEventNode(node,...info){
         let renode = {
@@ -245,8 +234,7 @@ export class element{
     insertMultipleNodes(...allNodes){
         if (allNodes.length>0){
             allNodes.forEach((node)=>{
-                let scope = this.#nodeScopes[node[0].type];
-                this[scope](...node);
+                this[this.#nodeScopes[node[0].type]](...node);
             })
         }
     }
@@ -264,13 +252,9 @@ export class element{
         for (let i in this){
             this[i] = undefined;
         }
-        
-        this.#vx = undefined;
-        this.#vy = undefined;
         this.#properties = {};
         this.#renderer = {};
         this.#hitbox = {};
-        //this.#reactions = {property:{}, renderer:{}};
     }
     insertNode(node,...data){
         let id = Symbol(`node`);
@@ -282,11 +266,7 @@ export class element{
         }
         let app = node.onApply({element:this,key:renode},...renode.data);
         if (app!=undefined){
-            if (app){
-               for (let i in app){
-                renode[i] = app[i];
-               }
-            }
+            Object.assign(renode, app);
         }
         this.#nodes.set(id, renode);
     }
@@ -334,6 +314,16 @@ export class element{
         })
         return results;
     }
+    batchSet(...paths){
+        paths.forEach((path)=>{
+            this.set(...path)
+        })
+    }
+    batchDelete(...paths){
+        paths.forEach((path)=>{
+            this.delete(...path)
+        })
+    }
     update(deltatime, delta){
         if (this.isDestroyed)return;
         this.customupdate(deltatime,delta);
@@ -345,6 +335,17 @@ export class element{
                }
             }
         });
+    }
+    setToUi(){
+        if (this.#properties.inUi)return;
+        this.set(`properties/inUi`,true);
+        if (this.chunk) this.chunk.removeElement(this);
+        game.currentscene.uiList.set(this.id,this);
+    }
+    removeFromUi(){
+        if (!this.#properties.inUi)return;
+        game.currentscene.uiList.delete(this.id);
+        game.currentscene.addElement(this);
     }
     setup(){};customdestroy(){};customupdate(){};
 }

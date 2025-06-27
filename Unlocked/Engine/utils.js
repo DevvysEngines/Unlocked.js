@@ -43,4 +43,20 @@ export class utils{
             ,y: (y)*camera.zoom-window.height/2*camera.zoom+camera.y
         }
     }
+    static normalizePath(path){
+        let newpath = [];
+        path.forEach((newstr)=>{
+            if (typeof newstr == `string`)
+            {
+                newstr = newstr.replaceAll(`.`, `/`);
+                newstr = newstr.replaceAll(`[`, `/`);
+                newstr = newstr.replaceAll(`]`, ``);
+                newstr = newstr.split(`/`);
+                newpath.push(...newstr);
+            } else {
+                newpath.push(newstr);
+            }
+        })
+        return newpath;
+    }
 }

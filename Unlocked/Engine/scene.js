@@ -8,6 +8,7 @@ export class scene{
         this.Name = Name;
         this.game = game;
         this.chunks = new Map();
+        this.uiList = new Map();
         this.chunkSize = 600;
         this.addCamera(new camera(this));
         for (let i = 0; i<30; i++){
@@ -36,6 +37,10 @@ export class scene{
         return this.giveChunk(newX,newY);
     }
     addElement(element){
+        if (element.get(`properties/ui`)){
+            element.setToUi();
+            return;
+        }
         const chunk = this.locateChunkByPos(element.x,element.y);
         if (!chunk)return;
         chunk.addElement(element);

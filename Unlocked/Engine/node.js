@@ -1,4 +1,5 @@
 import { effect } from "./effects.js";
+import { utils } from "./utils.js";
 
 export class node{
     static effect = effect;
@@ -7,7 +8,7 @@ export class node{
         this.update = update;
         this.onFinished = onFinished;
         this.Name = Name;
-        this.tags = tags;
+        this.tags = utils.normalizePath(tags);
         this.type = `node`;
     }
 }

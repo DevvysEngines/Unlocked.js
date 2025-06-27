@@ -14,17 +14,17 @@ export class chunk{
     }
     addElement(element){
         //console.log(`${element.Name} is joining chunk ${this.pos.x},${this.pos.y}.`)
-        if (element.get(`properties`,`usesMouse`)){
+        if (element.get(`properties/usesMouse`)){
             this.mouseElements.set(element.id, element);
         }
-        element.set(`properties`,`chunk`,this.pos);
+        element.set(`properties/chunk`,this.pos);
         const color = element.color;
         const id = element.id;
         this.allElements.set(id,element);
         let colormap;
         if (!this.elements.has(color)) this.elements.set(color,new Map());
         colormap = this.elements.get(color);
-        if (colormap.has(element.get(`properties`,`id`)))console.warn(`WARNING`);
+        if (colormap.has(id))console.warn(`WARNING`);
         colormap.set(id, element);
     }
     removeElement(element){
@@ -32,7 +32,7 @@ export class chunk{
         if (this.mouseElements.get(element.id)){
             this.mouseElements.delete(element.id);
         }
-        element.set(`properties`,`chunk`,{x:-1,y:-1});
+        element.set(`properties/chunk`,{x:-1,y:-1});
         const color = element.color;
         const id = element.id;
         this.allElements.delete(id);
@@ -40,6 +40,9 @@ export class chunk{
         if (!this.elements.has(color))return;
         colormap = this.elements.get(color);
         colormap.delete(id);
+        if (colormap.size<=0){
+            this.elements.delete(color);
+        }
     }
     update(deltatime, delta){
         for (let [k,v] of this.allElements){

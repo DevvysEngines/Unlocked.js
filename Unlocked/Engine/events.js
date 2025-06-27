@@ -34,37 +34,70 @@ export class events{
                 game.currentscene.camera.zoom-=1/4;
                 break;
         }
+        events.mousemove();
     }
-    static mousemove(info){
+    static mousemove(info=game.mouse){
+        game.mouse.x = info.x;
+        game.mouse.y = info.y;
+        let isover = false;
+        for (let [k,v] of game.currentscene.uiList){
+            if (v.ifover(info.x,info.y)){
+                v.set(`mouse/over`,true);
+                isover = true;
+            } else if (v.get(`mouse/over`)==true){
+                v.set(`mouse/over`,false);
+            }
+        }
         info = utils.unmap(info.x,info.y);
         utils.aroundChunk((c_info)=>{
             for (let [i,v] of c_info.chunk.mouseElements){
                 if (v.ifover(info.x,info.y)){
-                    v.set(`mouse`,`over`,true);
-                } else if (v.get(`mouse`,`over`)==true){
-                    v.set(`mouse`,`over`,false);
+                    v.set(`mouse/over`,true);
+                    isover = true;
+                } else if (v.get(`mouse/over`)==true){
+                    v.set(`mouse/over`,false);
                 }
             }
         })
+        if (isover){
+            document.body.style.cursor = `pointer`;
+        } else {
+            document.body.style.cursor = `default`;
+        }
+        game.mouse.isover = isover;
     }
     static mousedown(info){
+        for (let [k,v] of game.currentscene.uiList){
+            if (v.ifover(info.x,info.y)){
+                v.set(`mouse/down`,true);
+            }
+        }
         info = utils.unmap(info.x,info.y);
         utils.aroundChunk((c_info)=>{
             for (let [i,v] of c_info.chunk.mouseElements){
                 if (v.ifover(info.x,info.y)){
-                    v.set(`mouse`,`down`,true);
+                    v.set(`mouse/down`,true);
                 }
             }
         })
     }
     static mouseup(info){
+        for (let [k,v] of game.currentscene.uiList){
+            if (v.ifover(info.x,info.y)){
+                if (v.ifover(info.x,info.y)&&v.get(`mouse/down`)==true){
+                    v.set(`mouse/down`,false);
+                } else if (v.get(`mouse/down`)==true){
+                    v.system_set(`mouse/down`,false);
+                }
+            }
+        }
         info = utils.unmap(info.x,info.y);
         utils.aroundChunk((c_info)=>{
             for (let [i,v] of c_info.chunk.mouseElements){
-                if (v.ifover(info.x,info.y)&&v.get(`mouse`,`down`)==true){
-                    v.set(`mouse`,`down`,false);
-                } else if (v.get(`mouse`,`down`)==true){
-                    v.system_set(`mouse`,`down`,false);
+                if (v.ifover(info.x,info.y)&&v.get(`mouse/down`)==true){
+                    v.set(`mouse/down`,false);
+                } else if (v.get(`mouse/down`)==true){
+                    v.system_set(`mouse/down`,false);
                 }
             }
         })

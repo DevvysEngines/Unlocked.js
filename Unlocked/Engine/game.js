@@ -10,6 +10,12 @@ export class Game{
         this.ctx = this.Canvas.ctx;
         this.time = 0;
 
+        this.mouse = {
+            x: 0
+            ,y: 0
+            ,isover: false
+        }
+
         this.scenes = {};
         this.allElements = new Map();
 

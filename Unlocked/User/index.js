@@ -9,7 +9,7 @@ window.game = game; // for debugging purposes, delete once publishing
 // NODE EXAMPLES(NORMAL NODES)
 let poison = new node.effect(
     `poison`
-    ,[`damage`,`poison`,`custom`]
+    ,[`damage/poison/custom`]
     ,undefined
     ,({element,key},delta,damage=5)=>{
         element.Damage(utils.tosec(damage)*delta,element);
@@ -17,49 +17,66 @@ let poison = new node.effect(
     }
 )
 
-// NODE EXAMPLES(EVENTNODES)
+// NODE EXAMPLES(EVENTNODES) (USING A PRESET)
 let hoverTransparency = [
     [
         eventNode.mouse.Entered
         ,({element})=>{
-            element.set(`renderer`,`transparency`,0.7)
+            element.set(`renderer/transparency`,0.7)
         }
     ]
     ,[
         eventNode.mouse.Left
         ,({element})=>{
-            element.set(`renderer`,`transparency`,1)
+            element.set(`renderer/transparency`,1)
         }
     ]
 ]
 
 // BASIC ELEMENT CREATION
-let bob = new entity(`bob`,50,100,{},{},{});
-bob.insertNode(poison,5);
-bob.insertEventNode(eventNode.mouse.Up,({element})=>{element.set(`properties`,`health`,500)});
-bob.insertMultipleNodes(...hoverTransparency,...eventNode.linkHitboxToRenderer);
-bob.set(`properties`,`health`,500);
+let bob = new entity(
+    {x:100,y:100,Name:`bob`}
+    ,{}
+    ,{}
+);
+bob.insertMultipleNodes(
+    [poison,5]
+    ,...hoverTransparency
+    ,...eventNode.linkHitboxToRenderer
+    ,[
+        eventNode.mouse.Up
+        ,({element})=>{
+            element.set(`properties/health`,500)
+        }
+    ]
+);
+bob.set(`properties/health`,500);
+game.bob = bob;
 
 // ADVANCED ELEMENT CREATION
 game.addElement(
     game.johnny = new entity(
-        `johnny` // Name
-        ,50 // x coordinate
-        ,50 // y coordinate
-        ,{type:`box`,color:[255,0,0]} // Renderer properties
+        {x:100, y:50, Name: `johnny`} // Normal properties
+        ,{color:[255,0,0]} // Renderer properties
         ,{} // Hitbox properties
-        ,{} // Normal properties
         ,...eventNode.linkHitboxToRenderer // Event Node preset(makes hitbox = renderer).
         ,...hoverTransparency // Custom Mouse Mouse Event Nodes(Makes the entity more transparent when hovered over with the mouse)
-        ,[poison,5] // makes the enemy suffer damage for 5 seconds, that increases exponentially
+        ,[poison,5] // makes the enemy suffer damage for 5 seconds, that increases exponentially(deals 200+ dmg)
         ,[
             eventNode.mouse.Up
             ,({element})=>{
-                element.set(`properties`,`health`,500) // sets the element's health to 500 which clicked
+                element.set(`properties/health`,500) // sets the element's health to 500 when clicked
             }
         ]
         ,(element)=>{
-            element.set(`properties`,`health`,500); // sets the element's health to 500 when added.
+            element.set(`properties/health`,500); // sets the element's health to 500 when added.
         }
     )
 )
+
+game.addElement(new entity(
+        {},{color:[0,0,255]},{}
+        ,...eventNode.linkHitboxToRenderer,...hoverTransparency,[poison,5]
+        ,[eventNode.mouse.Up,({element})=>{element.set(`properties/health`,500)}]
+        ,(element)=>{element.set(`properties/health`,500);}
+))
