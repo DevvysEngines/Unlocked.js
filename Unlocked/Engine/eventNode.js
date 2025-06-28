@@ -7,28 +7,12 @@ export class eventNode{
         element: [
             [
                 new eventNode(`xPositionChange`,[`position/system/x`],[`properties/x`],undefined,({element,key},[ov,v],info)=>{
-                    if (!element.chunk)return;
-                    const chunk = game.currentscene.locateChunkByPos(v,element.y)
-                    if (!chunk)return;
-                    const chunkpos = {x:chunk.pos.x,y:chunk.pos.y};
-                    const mychunkpos = element.get(`properties/chunk`);
-                    if (chunkpos.x!=mychunkpos.x||chunkpos.y!=mychunkpos.y){
-                        element.chunk.removeElement(element);
-                        chunk.addElement(element);
-                    }
+                    eventNode.system_presets.DRY_system.position_changed(element);
                 })
             ]
             ,[
                 new eventNode(`yPositionChange`,[`position/system/y`],[`properties/y`],undefined,({element,key},[ov,v],info)=>{
-                    if (!element.chunk)return;
-                    const chunk = game.currentscene.locateChunkByPos(element.x,v)
-                    if (!chunk)return;
-                    const chunkpos = {x:chunk.pos.x,y:chunk.pos.y};
-                    const mychunkpos = element.get(`properties/chunk`);
-                    if (chunkpos.x!=mychunkpos.x||chunkpos.y!=mychunkpos.y){
-                        element.chunk.removeElement(element);
-                        chunk.addElement(element);
-                    }
+                    eventNode.system_presets.DRY_system.position_changed(element);
                 })
             ]
             ,[
@@ -42,38 +26,23 @@ export class eventNode{
                 })
             ]
             ,[
-                new eventNode(`colorChange`,[`color/system`],[`renderer/color`],()=>{return true},({element,key},[ov,v],info)=>{
-                        let chunk = element.chunk;
-                        if (!chunk)return;
-                        element.system_set("renderer/color",ov)
-                        chunk.removeElement(element);
-                        element.system_set("renderer/color",v);
-                        chunk.addElement(element);
+                new eventNode(`colorChange`,[`color/system`],[`renderer/color`],()=>{return true},({element,key},v,info)=>{
+                        eventNode.system_presets.DRY_system.main_change(element,`renderer/color`,v);
                 })
             ]
             ,[
-                new eventNode(`transparencyChange`,[`transparency/system`],[`renderer/transparency`],()=>{return true},({element,key},[ov,v],info)=>{
-                        let chunk = element.chunk;
-                        if (!chunk)return;
-                        element.system_set("renderer/transparency",ov)
-                        chunk.removeElement(element);
-                        element.system_set("renderer/transparency",v);
-                        chunk.addElement(element);
+                new eventNode(`transparencyChange`,[`transparency/system`],[`renderer/transparency`],()=>{return true},({element,key},v,info)=>{
+                        eventNode.system_presets.DRY_system.main_change(element,`renderer/transparency`,v);
                 })
             ]
             ,[
-                new eventNode(`rendererTypeChange`,[`renderer/type/system`],[`renderer/type`],()=>{return true},({element,key},[ov,v],info)=>{
-                    if (!types[v]){
-                        console.warn(`${v} is not a valid rendering type for '${element.Name}'.(SYSTEM WARNING)`)
-                        element.system_set(`renderer/type`,ov);
+                new eventNode(`rendererTypeChange`,[`renderer/type/system`],[`renderer/type`],()=>{return true},({element,key},v,info)=>{
+                    if (!types[v[1]]){
+                        console.warn(`${v[1]} is not a valid rendering type for '${element.Name}'.(SYSTEM WARNING)`)
+                        element.system_set(`renderer/type`,v[0]);
                         return;
                     };
-                    let chunk = element.chunk;
-                    if (!chunk)return;
-                    element.system_set("renderer/type",ov)
-                    chunk.removeElement(element);
-                    element.system_set("renderer/type",v)
-                    chunk.addElement(element);
+                    eventNode.system_presets.DRY_system.main_change(element,`renderer/type`,v);
                 })
             ]
             ,[
@@ -92,13 +61,59 @@ export class eventNode{
                 })
             ]
         ]
+        ,mouse_system: {
+            currentDragEventTracking:
+                new eventNode(
+                    `mouseDraggingTracking`
+                    ,[`preset/system/dragging/tracking`]
+                    ,[`mouse/dragging`]
+                    ,(ov,v)=>{return ov;},({element})=>{
+                        element.searchForNodeByTag(`currentMouseDraggingEvent`).forEach((node)=>{
+                            element.deleteNode(node);
+                        })
+                }, 1)
+            ,currentDragEvent:
+                new node(
+                    `currentMouseDraggingEvent`,[`currentMouseDraggingEvent`],undefined
+                    ,(obj,v,...info)=>{
+                        let upd = info.shift();
+                        upd(obj,v,...info);
+                })
+            ,doEvent:
+                function(obj,v,info){
+                    info.length<=0?info.push(()=>{}):info;
+                    let event = info.shift();
+                    event(obj,v,...info);
+                }
+        }
+        ,DRY_system: {
+            position_changed:
+                function(element){
+                    if (!element.chunk)return;
+                    const chunk = game.currentscene.locateChunkByPos(element.x,element.y);
+                    if (!chunk)return;
+                    const chunkpos = {x:chunk.pos.x,y:chunk.pos.y};
+                    const mychunkpos = element.get(`properties/chunk`);
+                    if (chunkpos.x!=mychunkpos.x||chunkpos.y!=mychunkpos.y){
+                        element.chunk.removeElement(element);
+                        chunk.addElement(element);
+                    }
+                }
+            ,main_change:
+                function(element,string,[ov,v]){
+                    let chunk = element.chunk;
+                    if (!chunk)return;
+                    element.system_set(string,ov)
+                    chunk.removeElement(element);
+                    element.system_set(string,v)
+                    chunk.addElement(element);
+                }
+        }
     }
     static mouse = {
         Entered:
         new eventNode(`mouseEntered`,[`preset/mouse/entered`],[`mouse/over`],(ov,v)=>{if(v==true)return true;},(obj,v,...info)=>{
-            info.length<=0?info.push(()=>{}):info;
-            let event = info.shift();
-            event(obj,v,...info);
+            eventNode.system_presets.mouse_system.doEvent(obj,v,info);
         },0,({element,key},...info)=>{
             element.set(`properties/usesMouse`,true);
         },({element,key},...info)=>{
@@ -108,9 +123,7 @@ export class eventNode{
         })
         ,Left:
         new eventNode(`mouseLeft`,[`preset/mouse/left`],[`mouse/over`],(ov,v)=>{if(v==false)return true;},(obj,v,...info)=>{
-            info.length<=0?info.push(()=>{}):info;
-            let event = info.shift();
-            event(obj,v,...info);
+            eventNode.system_presets.mouse_system.doEvent(obj,v,info);
         },0,({element,key},...info)=>{
             element.set(`properties/usesMouse`,true);
         },({element,key},...info)=>{
@@ -120,9 +133,7 @@ export class eventNode{
         })
         ,Down:
         new eventNode(`mouseDown`,[`preset/mouse/down`],[`mouse/down`],(ov,v)=>{if(v==true)return true;},(obj,v,...info)=>{
-            info.length<=0?info.push(()=>{}):info;
-            let event = info.shift();
-            event(obj,v,...info);
+            eventNode.system_presets.mouse_system.doEvent(obj,v,info);
         },0,({element,key},...info)=>{
             element.set(`properties/usesMouse`,true);
         },({element,key},...info)=>{
@@ -132,9 +143,7 @@ export class eventNode{
         })
         ,Up:
         new eventNode(`mouseUp`,[`preset/mouse/up`],[`mouse/down`],(ov,v)=>{if(v==false)return true;},(obj,v,...info)=>{
-            info.length<=0?info.push(()=>{}):info;
-            let event = info.shift();
-            event(obj,v,...info);
+            eventNode.system_presets.mouse_system.doEvent(obj,v,info);
         },0,({element,key},...info)=>{
             element.set(`properties/usesMouse`,true);
         },({element,key},...info)=>{
@@ -145,20 +154,9 @@ export class eventNode{
         ,Dragging:
         new eventNode(`mouseDragging`,[`preset/mouse/dragging`],[`mouse/dragging`],(ov,v)=>{return v;},({element,key,ctx},[ov,v],...info)=>{
             let mouseEvent = info.shift();
-            element.insertNode(new node(`currentMouseDraggingEvent`,[`currentMouseDraggingEvent`],undefined,mouseEvent));
-            element.insertEventNode(new eventNode(`mouseDraggingTracking`,[`preset/system/dragging/tracking`],[`mouse/dragging`],(ov,v)=>{return ov;},({element})=>{
-                    element.searchForNodeByTag(`currentMouseDraggingEvent`).forEach((node)=>{
-                    element.deleteNode(node);
-                })
-            }, 1,undefined,()=>{console.log(`k we done`)}))
-        }, false, ({element})=>{
-            /*
-            element.insertEventNode(new eventNode(`mouseDraggingTracking`,[`preset/system/dragging/tracking`],[`mouse/dragging`],(ov,v)=>{return ov;},({element})=>{
-                    element.searchForNodeByTag(`currentMouseDraggingEvent`).forEach((node)=>{
-                    element.deleteNode(node);
-                })
-            }))
-            */
+            if (typeof mouseEvent!==`function`)mouseEvent = ()=>{};
+            element.insertNode(eventNode.system_presets.mouse_system.currentDragEvent,mouseEvent);
+            element.insertEventNode(eventNode.system_presets.mouse_system.currentDragEventTracking)
         })
     }
     static linkHitboxToRenderer = [

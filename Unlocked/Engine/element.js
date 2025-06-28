@@ -205,7 +205,6 @@ export class element{
             if (current[path[i]]===undefined)return false;
             current = current[path[i]];
         }
-        current[path[path.length-1]];
         delete current[path[path.length-1]];
     }
     system_set(...path){
@@ -237,7 +236,6 @@ export class element{
         }
         let length = eventanswer.events.length
         renode.listLocation = this.#reactionsList.length;
-        if (eventpath[eventpath.length-1]==`dragging`)console.log(length);
         eventpath.push(`events`)
         eventpath.push(length);
         renode.eventLocation = length;
