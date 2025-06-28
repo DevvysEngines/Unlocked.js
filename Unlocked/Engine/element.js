@@ -1,6 +1,6 @@
 import { game } from "./engine.js";
 import { eventNode } from "./eventNode.js";
-import { render } from "./render.js";
+import { types } from "./types.js";
 import { utils } from "./utils.js";
 
 export class element{
@@ -27,6 +27,7 @@ export class element{
         ,chunk:{x:0,y:0}
         ,ui: false
         ,inUi: false
+        ,Name:`No Name`
     };
     #reactions={};
     #reactionsList = [];
@@ -37,6 +38,10 @@ export class element{
         ,width:30
         ,height:30
         ,radius:15
+        ,string: `String`
+        ,fonttype: `bold`
+        ,fontstyle: `sans-serif`
+        ,fontsize: 20
         ,roundedness:0
         ,color:[0,0,0]
         ,rotation:0
@@ -62,23 +67,37 @@ export class element{
         Object.assign(this.#hitbox,hitbox)
         this.#properties.id = Symbol();
         this.setup();
-
-        if (allNodes.length>0){
-            let setup = allNodes.pop();
-            if (typeof setup != `function`){
-                allNodes.push(setup);
-                setup = false;
-            }
-            allNodes.forEach((node)=>{
-                let scope = this.#nodeScopes[node[0].type];
-                this[scope](...node);
-            })
-            if (setup){
-                setup(this);
-            }
-        }
+        
+        let setup = (typeof allNodes[allNodes.length-1] == `function`) ? allNodes.pop() : false;
+        this.insertMultipleNodes(...allNodes);
+        if (setup)setup(this);
 
         this.insertMultipleNodes(...eventNode.system_presets.element);
+        this.#internal_setup();
+    }
+    #internal_setup(){
+        let r = this.#renderer;
+        let p = this.#properties;
+        let h = this.#hitbox;
+
+        if (!types[r.type]){
+            console.warn(`${r.type} is not a valid rendering type for '${this.Name}'.(SYSTEM WARNING)`)
+            r.type = `box`;
+        }
+        if (!types[h.type]){
+            console.warn(`${h.type} is not a valid hitbox type for '${this.Name}'.(SYSTEM WARNING)`)
+            h.type = `box`;
+        }
+        if (r.type==`txt`){
+            this.set(`renderer/width`,this.textWidth);
+            this.set(`renderer/height`,this.dime.fontsize);
+        }
+    }
+    get textWidth(){
+        let dime = this.dime;
+        let renderer = this.#renderer;
+        game.ctx.font = utils.givefont(dime.fontsize,renderer.fonttype,renderer.fontstyle)//dime.fontsize);
+        return game.ctx.measureText(renderer.string).width//dime.fontsize);
     }
     get Name(){
         return this.#properties.Name;
@@ -114,6 +133,7 @@ export class element{
                 ,width: Math.round(r.width)
                 ,height: Math.round(r.width)
                 ,radius: Math.round(r.radius)
+                ,fontsize: r.fontsize
             }
         }
         const camera = game.currentscene.camera;
@@ -124,6 +144,7 @@ export class element{
             ,width:Math.round(r.width/camera.zoom)
             ,height:Math.round(r.height/camera.zoom)
             ,radius:Math.round(r.radius/camera.zoom)
+            ,fontsize: r.fontsize/camera.zoom
         }
     }
     get hitboxDime(){
@@ -139,22 +160,14 @@ export class element{
     }
     ifover(x,y){
         let hd = this.hitboxDime;
-        switch(hd.type){
-            case `box`:
-            if (
-                x>hd.x-hd.width/2
-                &&x<hd.x+hd.width/2
-                &&y<hd.y+hd.height/2
-                &&y>hd.y-hd.height/2
-            ) return true;
-        }
+        return types[this.#hitbox.type].ifover(x,y,hd,this.#hitbox,this);
     }
     render(ctx){
         if (this.isDestroyed)return;
         const dime = this.dime;
         ctx.save();
         ctx.translate(dime.x,dime.y);
-        render[this.#renderer.type].render(ctx,this);
+        types[this.#renderer.type].render(ctx,dime,this.#renderer);
         ctx.restore();
     }
     get(...path){
@@ -223,13 +236,14 @@ export class element{
             eventanswer = this.get(...eventpath);
         }
         let length = eventanswer.events.length
-        renode.eventLocation = length;
         renode.listLocation = this.#reactionsList.length;
+        if (eventpath[eventpath.length-1]==`dragging`)console.log(length);
         eventpath.push(`events`)
         eventpath.push(length);
-        renode.node.onApply({element:this,key:renode},...renode.info);
+        renode.eventLocation = length;
         this.set(...eventpath,renode);
         this.#reactionsList[renode.listLocation] = renode;
+        renode.node.onApply({element:this,key:renode},...renode.info);
     }
     insertMultipleNodes(...allNodes){
         if (allNodes.length>0){
@@ -329,10 +343,10 @@ export class element{
         this.customupdate(deltatime,delta);
         this.#nodes.forEach((node)=>{
             let da = node.node.update({element:this,key:node},delta,...node.data)
-            if (da){
-               for (let i in da){
+            if (!da)return;
+            for (let i in da)
+            {
                 node[i] = da[i];
-               }
             }
         });
     }

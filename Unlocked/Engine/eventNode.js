@@ -1,3 +1,5 @@
+import { node } from "./node.js";
+import { types } from "./types.js";
 import { utils } from "./utils.js";
 
 export class eventNode{
@@ -61,12 +63,24 @@ export class eventNode{
             ]
             ,[
                 new eventNode(`rendererTypeChange`,[`renderer/type/system`],[`renderer/type`],()=>{return true},({element,key},[ov,v],info)=>{
+                    if (!types[v]){
+                        console.warn(`${v} is not a valid rendering type for '${element.Name}'.(SYSTEM WARNING)`)
+                        element.system_set(`renderer/type`,ov);
+                        return;
+                    };
                     let chunk = element.chunk;
                     if (!chunk)return;
                     element.system_set("renderer/type",ov)
                     chunk.removeElement(element);
                     element.system_set("renderer/type",v)
                     chunk.addElement(element);
+                })
+            ]
+            ,[
+                new eventNode(`hitboxTypeChange`,[`hitbox/type/system`],[`hitbox/type`],undefined,({element},[ov,v])=>{
+                    if (types[v])return
+                    console.warn(`${v} is not a valid hitbox type for '${element.Name}'.(SYSTEM WARNING)`)
+                    element.system_set(`hitbox/type`,ov);
                 })
             ]
             ,[
@@ -128,9 +142,34 @@ export class eventNode{
                 element.set(`properties/usesMouse`,false);
             }
         })
+        ,Dragging:
+        new eventNode(`mouseDragging`,[`preset/mouse/dragging`],[`mouse/dragging`],(ov,v)=>{return v;},({element,key,ctx},[ov,v],...info)=>{
+            let mouseEvent = info.shift();
+            element.insertNode(new node(`currentMouseDraggingEvent`,[`currentMouseDraggingEvent`],undefined,mouseEvent));
+            element.insertEventNode(new eventNode(`mouseDraggingTracking`,[`preset/system/dragging/tracking`],[`mouse/dragging`],(ov,v)=>{return ov;},({element})=>{
+                    element.searchForNodeByTag(`currentMouseDraggingEvent`).forEach((node)=>{
+                    element.deleteNode(node);
+                })
+            }, 1,undefined,()=>{console.log(`k we done`)}))
+        }, false, ({element})=>{
+            /*
+            element.insertEventNode(new eventNode(`mouseDraggingTracking`,[`preset/system/dragging/tracking`],[`mouse/dragging`],(ov,v)=>{return ov;},({element})=>{
+                    element.searchForNodeByTag(`currentMouseDraggingEvent`).forEach((node)=>{
+                    element.deleteNode(node);
+                })
+            }))
+            */
+        })
     }
     static linkHitboxToRenderer = [
         [
+                new eventNode(`rendererStringChange`,[`preset/link/renderer/string`],[`renderer/string`],undefined,({element},[ov,v])=>{
+                    if (element.get(`renderer/type`)==`string`){
+
+                    }
+                })
+        ]
+        ,[
             new eventNode(`rendererTypeChange`,[`preset/link/renderer/type`],[`renderer/type`],undefined,({element,key},[ov,v],info)=>{
                 element.set(`hitbox/type`,v);
             },false,({element})=>{

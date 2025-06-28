@@ -49,6 +49,8 @@ export class events{
             }
         }
         info = utils.unmap(info.x,info.y);
+        game.mouse.filteredX = info.x;
+        game.mouse.filteredY = info.y;
         utils.aroundChunk((c_info)=>{
             for (let [i,v] of c_info.chunk.mouseElements){
                 if (v.ifover(info.x,info.y)){
@@ -70,6 +72,7 @@ export class events{
         for (let [k,v] of game.currentscene.uiList){
             if (v.ifover(info.x,info.y)){
                 v.set(`mouse/down`,true);
+                v.set(`mouse/dragging`,true);
             }
         }
         info = utils.unmap(info.x,info.y);
@@ -77,6 +80,7 @@ export class events{
             for (let [i,v] of c_info.chunk.mouseElements){
                 if (v.ifover(info.x,info.y)){
                     v.set(`mouse/down`,true);
+                    v.set(`mouse/dragging`,true);
                 }
             }
         })
@@ -86,8 +90,10 @@ export class events{
             if (v.ifover(info.x,info.y)){
                 if (v.ifover(info.x,info.y)&&v.get(`mouse/down`)==true){
                     v.set(`mouse/down`,false);
+                    v.set(`mouse/dragging`, false);
                 } else if (v.get(`mouse/down`)==true){
                     v.system_set(`mouse/down`,false);
+                    v.set(`mouse/dragging`, false);
                 }
             }
         }
@@ -96,8 +102,10 @@ export class events{
             for (let [i,v] of c_info.chunk.mouseElements){
                 if (v.ifover(info.x,info.y)&&v.get(`mouse/down`)==true){
                     v.set(`mouse/down`,false);
+                    v.set(`mouse/dragging`, false);
                 } else if (v.get(`mouse/down`)==true){
                     v.system_set(`mouse/down`,false);
+                    v.set(`mouse/dragging`, false);
                 }
             }
         })

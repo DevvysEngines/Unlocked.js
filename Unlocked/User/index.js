@@ -68,6 +68,13 @@ game.addElement(
                 element.set(`properties/health`,500) // sets the element's health to 500 when clicked
             }
         ]
+        ,[
+            eventNode.mouse.Dragging
+            ,({element,key})=>{
+                element.set(`properties/x`,game.mouse.filteredX);
+                element.set(`properties/y`,game.mouse.filteredY);
+            }
+        ]
         ,(element)=>{
             element.set(`properties/health`,500); // sets the element's health to 500 when added.
         }
@@ -75,8 +82,8 @@ game.addElement(
 )
 
 game.addElement(new entity(
-        {},{color:[0,0,255]},{}
+        {},{color:[0,0,255],type:`txt`,fontsize:25,string:`yes hello there`},{}
         ,...eventNode.linkHitboxToRenderer,...hoverTransparency,[poison,5]
-        ,[eventNode.mouse.Up,({element})=>{element.set(`properties/health`,500)}]
+        ,[eventNode.mouse.Up,({element})=>{element.set(`properties/health`,500);}]
         ,(element)=>{element.set(`properties/health`,500);}
 ))

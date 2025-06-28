@@ -59,4 +59,7 @@ export class utils{
         })
         return newpath;
     }
+    static givefont(size=16,style=`sans-serif`,type=``){
+        return (`${style} ${size}px ${type}`); // bold ${13/(game.hud ? 1:camera.zoom)}px sans-serif
+    }
 }

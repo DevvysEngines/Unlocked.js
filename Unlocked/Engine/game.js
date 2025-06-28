@@ -13,6 +13,8 @@ export class Game{
         this.mouse = {
             x: 0
             ,y: 0
+            ,filteredX: 0
+            ,filteredY: 0
             ,isover: false
         }
 
