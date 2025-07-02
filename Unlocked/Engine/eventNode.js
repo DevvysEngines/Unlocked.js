@@ -1,66 +1,33 @@
+import { game } from "./engine.js";
 import { node } from "./node.js";
 import { types } from "./types.js";
 import { utils } from "./utils.js";
 
 export class eventNode{
     static system_presets = {
-        element: [
-            [
-                new eventNode(`xPositionChange`,[`position/system/x`],[`properties/x`],undefined,({element,key},[ov,v],info)=>{
-                    eventNode.system_presets.DRY_system.position_changed(element);
-                })
-            ]
-            ,[
-                new eventNode(`yPositionChange`,[`position/system/y`],[`properties/y`],undefined,({element,key},[ov,v],info)=>{
-                    eventNode.system_presets.DRY_system.position_changed(element);
-                })
-            ]
-            ,[
-                new eventNode(`uiTurnedOn`,[`ui/system/change/on`],[`properties/ui`],(ov,v)=>{if(v)return true;},({element,key},[ov,v],info)=>{
-                    element.setToUi();
-                })
-            ]
-            ,[
-                new eventNode(`uiTurnedOff`,[`ui/system/change/off`],[`properties/ui`],(ov,v)=>{if(!v)return true;},({element,key},[ov,v],info)=>{
-                    element.removeFromUi();
-                })
-            ]
-            ,[
-                new eventNode(`colorChange`,[`color/system`],[`renderer/color`],()=>{return true},({element,key},v,info)=>{
-                        eventNode.system_presets.DRY_system.main_change(element,`renderer/color`,v);
-                })
-            ]
-            ,[
-                new eventNode(`transparencyChange`,[`transparency/system`],[`renderer/transparency`],()=>{return true},({element,key},v,info)=>{
-                        eventNode.system_presets.DRY_system.main_change(element,`renderer/transparency`,v);
-                })
-            ]
-            ,[
-                new eventNode(`rendererTypeChange`,[`renderer/type/system`],[`renderer/type`],()=>{return true},({element,key},v,info)=>{
+        element: 
+            [[new eventNode(`xPositionChange`,[`position/system/x`],[`properties/x`],undefined,({element,key},[ov,v],info)=>{eventNode.system_presets.DRY_system.position_changed(element);})]
+            ,[new eventNode(`yPositionChange`,[`position/system/y`],[`properties/y`],undefined,({element,key},[ov,v],info)=>{eventNode.system_presets.DRY_system.position_changed(element);})]
+            ,[new eventNode(`uiTurnedOn`,[`ui/system/change/on`],[`properties/ui`],(ov,v)=>{if(v)return true;},({element,key},[ov,v],info)=>{element.setToUi();})]
+            ,[new eventNode(`uiTurnedOff`,[`ui/system/change/off`],[`properties/ui`],(ov,v)=>{if(!v)return true;},({element,key},[ov,v],info)=>{element.removeFromUi();})]
+            ,[new eventNode(`colorChange`,[`color/system`],[`renderer/color`],()=>{return true},({element,key},v,info)=>{eventNode.system_presets.DRY_system.main_change(element,[`renderer`,`color`],v);})]
+            ,[new eventNode(`transparencyChange`,[`transparency/system`],[`renderer/transparency`],()=>{return true},({element,key},v,info)=>{eventNode.system_presets.DRY_system.main_change(element,[`renderer`,`transparency`],v);})]
+            ,[new eventNode(`rendererTypeChange`,[`renderer/type/system`],[`renderer/type`],()=>{return true},({element,key},v,info)=>{
                     if (!types[v[1]]){
                         console.warn(`${v[1]} is not a valid rendering type for '${element.Name}'.(SYSTEM WARNING)`)
-                        element.system_set(`renderer/type`,v[0]);
+                        element.system_set([`renderer`,`type`],v[0]);
                         return;
                     };
-                    eventNode.system_presets.DRY_system.main_change(element,`renderer/type`,v);
-                })
-            ]
-            ,[
-                new eventNode(`hitboxTypeChange`,[`hitbox/type/system`],[`hitbox/type`],undefined,({element},[ov,v])=>{
-                    if (types[v])return
+                    eventNode.system_presets.DRY_system.main_change(element,[`renderer`,`type`],v);})]
+            ,[new eventNode(`hitboxTypeChange`,[`hitbox/type/system`],[`hitbox/type`],undefined,({element},[ov,v])=>{
+                    if (types[v])return;
                     console.warn(`${v} is not a valid hitbox type for '${element.Name}'.(SYSTEM WARNING)`)
-                    element.system_set(`hitbox/type`,ov);
-                })
-            ]
-            ,[
-                new eventNode(`usesMouseChange`,[`system`],[`properties/usesMouse`],()=>{return true},({element,key},[ov,v])=>{
+                    element.system_set([`hitbox`,`type`],ov);})]
+            ,[new eventNode(`usesMouseChange`,[`system`],[`properties/usesMouse`],()=>{return true},({element,key},[ov,v])=>{
                     let chunk = element.chunk;
                     if (!chunk)return;
                     chunk.removeElement(element);
-                    chunk.addElement(element);
-                })
-            ]
-        ]
+                    chunk.addElement(element);})]]
         ,mouse_system: {
             currentDragEventTracking:
                 new eventNode(
@@ -100,13 +67,28 @@ export class eventNode{
                     }
                 }
             ,main_change:
-                function(element,string,[ov,v]){
+                function(element,stringArr,[ov,v]){
                     let chunk = element.chunk;
                     if (!chunk)return;
-                    element.system_set(string,ov)
+                    element.system_set(stringArr,ov)
                     chunk.removeElement(element);
-                    element.system_set(string,v)
+                    element.system_set(stringArr,v)
                     chunk.addElement(element);
+                }
+            ,parent_position_change:
+                function(element,[ov,v],type){
+                    if (!element.get(`properties/parent/follow`))return;
+                    if (!element.get(`properties/parent/follow/${type}`))return;
+                    let diff = v-ov;
+                    element.get(`children`).forEach((id)=>{
+                        let child = game.allElements.get(id);
+                        if (!child)return;
+                        child.set(`properties/${type}`, child[type]+diff);
+                    })
+                }
+            ,adding_child:
+                function(element,child){
+                    element.get(`children`).push(child.id);
                 }
         }
     }
@@ -157,6 +139,12 @@ export class eventNode{
             if (typeof mouseEvent!==`function`)mouseEvent = ()=>{};
             element.insertNode(eventNode.system_presets.mouse_system.currentDragEvent,mouseEvent);
             element.insertEventNode(eventNode.system_presets.mouse_system.currentDragEventTracking)
+        },0,({element})=>{
+            element.set(`properties/usesMouse`,true);
+        },({element})=>{
+            if (element.searchForEventNodeByTag([`mouse`]).length<=0){
+                element.set(`properties/usesMouse`,false);
+            }
         })
     }
     static linkHitboxToRenderer = [
@@ -204,16 +192,59 @@ export class eventNode{
         ]
         ,[
             new eventNode(`hitboxXChange`,[`preset/link/hitbox/position/x`],[`hitbox/x`],undefined,({element,key},[ov,v],info)=>{
-                element.system_set(`hitbox/x`,0);
+                element.system_set([`hitbox`,`x`],0);
             },false,({element})=>{
-                element.system_set(`hitbox/x`,0);
+                element.system_set([`hitbox`,`x`],0);
             })
         ]
         ,[
             new eventNode(`hitboxYChange`,[`preset/link/hitbox/position/y`],[`hitbox/y`],undefined,({element,key},[ov,v],info)=>{
-                element.system_set(`hitbox/y`,0);
+                element.system_set([`hitbox`,`y`],0);
             },false,({element})=>{
-                element.system_set(`hitbox/y`,0);
+                element.system_set([`hitbox`,`y`],0);
+            })
+        ]
+    ]
+    static parentRelationship = [
+        [
+            new eventNode(`parentXChange`,[`preset/relationship/parent/x`],[`properties/x`],undefined,({element},v)=>{
+                eventNode.system_presets.DRY_system.parent_position_change(element,v,`x`);
+            }, false, ({element})=>{
+                element.set(`children`,[]);
+                element.addChild = function(child){
+                    eventNode.system_presets.DRY_system.adding_child(element,child);
+                }
+                let fArr = [
+                    [`follow`,{x:true,y:true}]
+                    ,[`rotationFollow`,{renderer:true,hitbox:true}]
+                ]
+                fArr.forEach((fAr)=>{
+                    if (!element.get(`properties/parent/${fAr[0]}`))element.set(`properties/parent/${fAr[0]}`, fAr[1]);  
+                })
+            })
+        ]
+        ,[
+            new eventNode(`parentYChange`,[`preset/relationship/parent/y`],[`properties/y`],undefined,({element},v)=>{
+                eventNode.system_presets.DRY_system.parent_position_change(element,v,`y`);
+            })
+        ]
+        ,[
+            new eventNode(`parentRotChange`,[`preset/relationship/parent/rotation`],[`renderer/rotation`],undefined,({element},[ov,v])=>{
+                if (!element.get(`properties/parent/rotationFollow`))return;
+                if (!element.get(`properties/parent/rotationFollow/renderer`))return;
+                let diff = v-ov;
+                let {x,y} = element;
+                element.get(`children`).forEach((id)=>{
+                    let child = game.allElements.get(id);
+                    if (!child)return;
+                    let rot = utils.rotatepoint(child.x,child.y,diff,x,y);
+                    child.batchSet(
+                        [`properties/x`, rot.x]
+                        ,[`properties/y`, rot.y]
+                        ,[`renderer/rotation`, child.get(`renderer/rotation`)+diff]
+                        ,[`hitbox/rotation`, child.get(`hitbox/rotation`)+diff]
+                    );
+                })
             })
         ]
     ]

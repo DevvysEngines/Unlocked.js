@@ -1,4 +1,4 @@
-import { element } from "./element.js";
+import { element } from "./element/element.js";
 import { game } from "./engine.js";
 
 export class entity extends element {
@@ -7,52 +7,52 @@ export class entity extends element {
     }
     setup(){
         let hI;
-        if (!this.get(`properties/maxHealth`))this.set(`properties/maxHealth`,100);
-        if (!this.get(`properties/health`))this.set(`properties/health`,100);
+        if(!this.get(`vitals`))this.set(`vitals`,{});
+        if (!this.get(`vitals/maxHealth`))this.set(`vitals/maxHealth`,100);
+        if (!this.get(`vitals/health`))this.set(`vitals/health`,100);
         hI = this.getHealthInfo;
         this.batchSet(
-            [`properties/healthPercentage`,hI.health/hI.maxHealth]
-            ,[`properties/lastDamaged`,null]
-            ,[`properties/entitiesThatDamaged`,new Map()]
-            ,[`properties/lastDamageDealtTo`,null]
-            ,[`properties/lastDamageDealtAmount`,0]
-            ,[`properties/entitiesKilled`,0]
-            ,[`properties/entitiesThatThisDamaged`,new Map()]
+            [`vitals/healthPercentage`,hI.health/hI.maxHealth]
+            ,[`vitals/lastDamaged`,null]
+            ,[`vitals/entitiesThatDamaged`,new Map()]
+            ,[`vitals/lastDamageDealtTo`,null]
+            ,[`vitals/lastDamageDealtAmount`,0]
+            ,[`vitals/entitiesKilled`,0]
+            ,[`vitals/entitiesThatThisDamaged`,new Map()]
         );
     }
     get health(){
-        return this.get(`properties/health`);
+        return this.get(`vitals/health`);
     }
     get healthPercentage(){
-        return this.get(`properties/healthPercentage`)
+        return this.get(`vitals/healthPercentage`)
     }
     get getHealthInfo(){
         return {
             health: this.health
-            ,maxHealth: this.get(`properties/maxHealth`)
+            ,maxHealth: this.get(`vitals/maxHealth`)
             ,healthPercentage: this.healthPercentage
-            ,lastDamaged: this.get(`properties/lastDamaged`)
-            ,entitiesThatDamaged: this.get(`properties/entitiesThatDamaged`)
+            ,lastDamaged: this.get(`vitals/lastDamaged`)
+            ,entitiesThatDamaged: this.get(`vitals/entitiesThatDamaged`)
         }
     }
     get getDamageInfo(){
             return {
-                lastDamageDealtTo: this.get(`properties/lastDamageDealtTo`)
-                ,lastDamageDealtAmount: this.get(`properties/lastDamageDealtAmount`)
-                ,entitiesThatThisDamaged: this.get(`properties/entitiesThatThisDamaged`)
-                ,entitiesKilledAmount: this.get(`properties/entitiesKilledAmount`)
-                ,entitiesKilled: this.get(`properties/entitiesKilled`)
+                lastDamageDealtTo: this.get(`vitals/lastDamageDealtTo`)
+                ,lastDamageDealtAmount: this.get(`vitals/lastDamageDealtAmount`)
+                ,entitiesThatThisDamaged: this.get(`vitals/entitiesThatThisDamaged`)
+                ,entitiesKilled: this.get(`vitals/entitiesKilled`)
             }
     }
     Damage(damage,entity){
         if (!entity)return;else if(!entity.isElement)return;
-        const oldhealth = this.get(`properties/health`);
+        const oldhealth = this.get(`vitals/health`);
         const eid = entity.id;
         const id = this.id;
-        this.set(`properties/health`,oldhealth-damage);
-        this.set(`properties/lastDamaged`,eid);
+        this.set(`vitals/health`,oldhealth-damage);
+        this.set(`vitals/lastDamaged`,eid);
         let hI = this.getHealthInfo;
-        this.set(`properties/healthPercentage`,hI.health/hI.maxHealth);
+        this.set(`vitals/healthPercentage`,hI.health/hI.maxHealth);
 
         if (!hI.entitiesThatDamaged.has(eid)){
             let newMap = hI.entitiesThatDamaged;
@@ -64,17 +64,18 @@ export class entity extends element {
             })
         } else {
             let newMap = hI.entitiesThatDamaged;
-            let oldMap = hI.entitiesThatDamaged.get(entity.id);
+            let oldMap = newMap.get(entity.id);
             newMap.set(eid,{
                 id: eid
                 ,times: oldMap.times+1
                 ,totalDamage: ((oldMap.totalDamage)+damage)
                 ,lastDamage: damage
             })
+            this.set(`vitals/entitiesThatDamaged`,newMap);
         }
 
-        entity.set(`properties/lastDamageDealtTo`,id);
-        entity.set(`properties/lastDamageDealtAmount`,damage);
+        entity.set(`vitals/lastDamageDealtTo`,id);
+        entity.set(`vitals/lastDamageDealtAmount`,damage);
         let dI = entity.getDamageInfo;
         if (!dI.entitiesThatThisDamaged.has(id)){
             let newMap = dI.entitiesThatThisDamaged;
@@ -96,10 +97,9 @@ export class entity extends element {
         }
 
         if (damage>=oldhealth){
-            let newMap = dI.entitiesKilled;
-            newMap.set(id,true);
-            entity.set(`properties/entitiesKilled`,newMap);
-            entity.set(`properties/entitiesKilledAmount`,dI.entitiesKilledAmount+1);
+            let amm = dI.entitiesKilled+1;
+            entity.set(`vitals/entitiesKilled`,amm);
+            entity.set(`vitals/entitiesKilledAmount`,dI.entitiesKilledAmount+1);
             this.death();
         };
     }
@@ -113,19 +113,19 @@ export class entity extends element {
     };
     customdestroy(){
         const id = this.id
-        let eTTD = this.get(`properties/entitiesThatThisDamaged`);
-        let eTD = this.get(`properties/entitiesThatDamaged`);
+        let eTTD = this.get(`vitals/entitiesThatThisDamaged`);
+        let eTD = this.get(`vitals/entitiesThatDamaged`);
         for (let [ki,vi] of eTTD){
             let entity = game.allElements.get(vi.id);
-            let newMap = entity.get(`properties/entitiesThatDamaged`);
+            let newMap = entity.get(`vitals/entitiesThatDamaged`);
             newMap.delete(id);
-            entity.set(`properties/entitiesThatDamaged`,newMap);
+            entity.set(`vitals/entitiesThatDamaged`,newMap);
         }
         for (let [kv, vv] of eTD){
             let entity = game.allElements.get(vv.id);
-            let newMap = entity.get(`properties/entitiesThatThisDamaged`);
+            let newMap = entity.get(`vitals/entitiesThatThisDamaged`);
             newMap.delete(id);
-            entity.set(`properties/entitiesThatThisDamaged`,newMap);
+            entity.set(`vitals/entitiesThatThisDamaged`,newMap);
         }
     }
     customupdate(deltatime){

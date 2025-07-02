@@ -2,13 +2,30 @@ import { Canvas } from "./canvas.js"
 import { events } from "./events.js";
 import { scene } from "./scene.js";
 import { frame } from "./frame.js";
+import { element } from "./element/element.js";
+import { entity } from "./entity.js";
 
 export class Game{
     constructor(){
+        let game = this;
         this.Canvas = new Canvas();
         this.canvas = this.Canvas.canvas
         this.ctx = this.Canvas.ctx;
         this.time = 0;
+
+        this.element = class extends element{
+            constructor(properties,renderer,hitbox,...allNodes){
+                super(properties,renderer,hitbox,...allNodes);
+                game.addElement(this);
+            }
+        }
+
+        this.entity = class extends entity{
+            constructor(properties,renderer,hitbox,...allNodes){
+                super(properties,renderer,hitbox,...allNodes);
+                game.addElement(this);
+            }
+        }
 
         this.mouse = {
             x: 0

@@ -92,7 +92,7 @@ export class events{
                     v.set(`mouse/down`,false);
                     v.set(`mouse/dragging`, false);
                 } else if (v.get(`mouse/down`)==true){
-                    v.system_set(`mouse/down`,false);
+                    v.system_set([`mouse`,`down`],false);
                     v.set(`mouse/dragging`, false);
                 }
             }
@@ -104,7 +104,7 @@ export class events{
                     v.set(`mouse/down`,false);
                     v.set(`mouse/dragging`, false);
                 } else if (v.get(`mouse/down`)==true){
-                    v.system_set(`mouse/down`,false);
+                    v.system_set([`mouse`,`down`],false);
                     v.set(`mouse/dragging`, false);
                 }
             }
