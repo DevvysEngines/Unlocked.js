@@ -24,3 +24,12 @@ Lessons:
 
 Lessons:
 https://docs.google.com/document/d/1ruVSFHxC4LGEdxV5c3sJ9gNheChTE4vn1jCSV5MqUSY/edit?usp=sharing
+
+
+## License
+
+Unlocked.js is developed and maintained by **DevvysEngines**.  
+This project is licensed under the [MIT License](LICENSE).  
+You're free to use, modify, and distribute it — just make sure to credit the original project.
+
+Thank you!
