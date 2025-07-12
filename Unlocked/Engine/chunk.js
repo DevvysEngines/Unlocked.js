@@ -7,59 +7,59 @@ export class chunk{
         this.scene = scene;
         this.x = this.pos.x*this.scene.chunkSize;
         this.y = this.pos.y*this.scene.chunkSize;
-        this.mouseElements = new Map();
-        this.allElements = new Map();
-        this.elements = new Map();
+        this.mouseElements = {};
+        this.allElements = {};
+        this.elements = {};
         this.renderChunk();
     }
     addElement(element){
         //console.log(`${element.Name} is joining chunk ${this.pos.x},${this.pos.y}.`)
         if (element.get(`properties/usesMouse`)){
-            this.mouseElements.set(element.id, element);
+            this.mouseElements[element.id] = element;
         }
         element.set(`properties/chunk`,this.pos);
         const color = element.color;
         const id = element.id;
-        this.allElements.set(id,element);
+        this.allElements[id] = element;
         let colormap;
-        if (!this.elements.has(color)) this.elements.set(color,new Map());
-        colormap = this.elements.get(color);
-        if (colormap.has(id))console.warn(`WARNING`);
-        colormap.set(id, element);
+        if (!this.elements[color]) this.elements[color] = {};
+        colormap = this.elements[color];
+        if (colormap[id])console.warn(`WARNING`);
+        colormap[id] = element;
     }
     removeElement(element){
         //console.log(`${element.Name} is leaving chunk ${this.pos.x},${this.pos.y}.`)
-        if (this.mouseElements.get(element.id)){
-            this.mouseElements.delete(element.id);
+        if (this.mouseElements[element.id]){
+            delete this.mouseElements[element.id];
         }
         element.set(`properties/chunk`,{x:-1,y:-1});
         const color = element.color;
         const id = element.id;
-        this.allElements.delete(id);
+        delete this.allElements[id];
         let colormap;
-        if (!this.elements.has(color))return;
-        colormap = this.elements.get(color);
-        colormap.delete(id);
-        if (colormap.size<=0){
-            this.elements.delete(color);
+        if (!this.elements[color])return;
+        colormap = this.elements[color];
+        delete colormap[id];
+        if (Object.keys(colormap).length<=0){
+            delete this.elements[color];
         }
     }
     update(deltatime, delta){
-        for (let [k,v] of this.allElements){
-            v.update(deltatime, delta);
-        }
+        Object.values(this.allElements).forEach((key)=>{
+            key.update(deltatime, delta);
+        })
     }
     render(ctx){
         //this.renderChunk(ctx);
-        for (let [key,colormap] of this.elements){
+        Object.keys(this.elements).forEach((key)=>{
             ctx.fillStyle = `rgb(${key})`;
             ctx.beginPath();
-            for (let [colorkey,element] of this.elements.get(key)){
+            Object.values(this.elements[key]).forEach((element)=>{
                 element.render(ctx);
                 ctx.closePath();
-            }
+            })
             ctx.fill()
-        }
+        })
     }
     renderChunk(ctx){
         /*const tomappos = utils.tomap(this.x,this.y);

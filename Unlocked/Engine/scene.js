@@ -22,6 +22,10 @@ export class scene{
             return true;
         }
     }
+    moveElementToChunk(element,newchunk){
+        element.chunk.removeElement(element);
+        newchunk.addElement(element);
+    }
     giveChunk(x,y){
         if (this.ifChunk(x,y)){
             return this.chunks.get(`${x},${y}`);

@@ -108,7 +108,7 @@ export class entity extends element {
     }
     death(){
         const hI = this.getHealthInfo;
-        console.log(`${this.Name} has died to ${game.allElements.get(hI.lastDamaged).Name}!`)
+        console.log(`${this.Name} has died to ${game.allElements[hI.lastDamaged].Name}!`)
         this.destroy()
     };
     customdestroy(){
@@ -116,7 +116,7 @@ export class entity extends element {
         let eTTD = this.get(`vitals/entitiesThatThisDamaged`);
         let eTD = this.get(`vitals/entitiesThatDamaged`);
         for (let [ki,vi] of eTTD){
-            let entity = game.allElements.get(vi.id);
+            let entity = game.allElements[vi.id];
             let newMap = entity.get(`vitals/entitiesThatDamaged`);
             newMap.delete(id);
             entity.set(`vitals/entitiesThatDamaged`,newMap);

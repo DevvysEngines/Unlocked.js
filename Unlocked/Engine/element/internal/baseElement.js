@@ -1,5 +1,5 @@
 import { game } from "../../engine.js";
-import { eventNode } from "../../eventNode.js";
+import { eventNode } from "../../events/eventNode.js";
 import { types } from "../../types.js";
 import { utils } from "../../utils.js";
 
@@ -31,7 +31,7 @@ export class baseElement{
             ,transparency: 1
         }
         ,"reactions": {}
-        ,"reactionsList": []
+        ,"reactionsList": {}
         ,"hitbox": {
             type:`box`
             ,x:0
@@ -41,11 +41,21 @@ export class baseElement{
             ,height:30
             ,radius:15
         }
-        ,"nodes": new Map()
+        ,"nodes": {}
         ,"mouse": {
             over:false
-            ,down:false
-            ,dragging:false
+            ,left:{
+                over:false
+                ,dragging:false
+            }
+            ,right:{
+                over:false
+                ,dragging:false
+            }
+            ,middle:{
+                over:false
+                ,dragging:false
+            }
         }
     }
     isElement=true;
@@ -105,29 +115,24 @@ export class baseElement{
     }
     #setScope(scope,startingVal){
         if (this.#scopes[scope]){
-            console.warn(`${scope} is already a scope for ${element.Name}.`);
+            console.warn(`${scope} is already a scope for ${this.Name}.`);
             return;
         }
         this.#scopes[scope] =  startingVal;
     }
     render(ctx){
-        if (this.isDestroyed)return;
+        if (this.isDestroyed) return;
         const dime = this.dime;
+        
         ctx.save();
-        ctx.translate(dime.x,dime.y);
-        ctx.rotate(utils.toradians(dime.rotation));
-        types[this.#scopes[`renderer`].type].render(ctx,dime,this.#scopes[`renderer`]);
+        ctx.translate(dime.x, dime.y);
+
+        types[this.#scopes[`renderer`].type].render(ctx, dime, this.#scopes[`renderer`]);
         ctx.restore();
     }
     get(...path){
         path = utils.normalizePath(path);
-        let centeral = path.shift();
-        let current = this.#scopes[centeral]
-        for (let i in path){
-            if (current[path[i]]===undefined)return false;
-            current = current[path[i]];
-        }
-        return current;
+        return this.system_get(path);
     }
     set(...path){
         let val = path.pop();
@@ -141,13 +146,18 @@ export class baseElement{
         for (let e in events)
         {
             let event = events[e];
-            if (!event.node.condition(oldvalue,value))continue;
-            event.node.trigger({element:this,key:event},[oldvalue,value],...event.info);
+            if (!event.active)continue;
+            if (!event.checkNode(oldvalue,value))continue;
+            let da = event.runNode([oldvalue,value],...event.info);
+            if (da)Object.assign(event,da);
             if (!event.node.triggerTimes)continue;
             event.node.triggerTimes--;
             if (event.node.triggerTimes>0)continue;
             this.deleteEventNode(event);
         }
+    }
+    has(...path){
+        return this.system_has(utils.normalizePath(path));
     }
     delete(...path){
         path = utils.normalizePath(path);
@@ -178,11 +188,23 @@ export class baseElement{
         current[path[path.length-1]] = value;
         return [value, oldvalue, centeral, ...path];
     }
+    system_get(path){
+        let centeral = path.shift();
+        let current = this.#scopes[centeral]
+        for (let i in path){
+            if (current[path[i]]===undefined)return undefined;
+            current = current[path[i]];
+        }
+        return current;
+    }
+    system_has(path){
+        return this.system_get(path)!==undefined
+    }
     destroy(){
         this.isDestroyed=true
         this.customdestroy()
         game.removeElement(this);
-        this.#scopes[`nodes`].forEach((node)=>{this.deleteNode(node)})
+        Object.values(this.#scopes[`nodes`]).forEach((node)=>{this.deleteNode(node)})
         
         for (let i in this){
             this[i] = undefined;
@@ -196,6 +218,12 @@ export class baseElement{
             this.set(...path)
         })
     }
+    batchGet(...paths){
+        return paths.map(path => this.get(...path));
+    }
+    batchHas(...paths){
+        return paths.map(path => this.has(...path));
+    }
     batchDelete(...paths){
         paths.forEach((path)=>{
             this.delete(...path)
@@ -204,13 +232,12 @@ export class baseElement{
     update(deltatime, delta){
         if (this.isDestroyed)return;
         this.customupdate(deltatime,delta);
-        this.#scopes[`nodes`].forEach((node)=>{
-            let da = node.node.update({element:this,key:node},delta,...node.data)
+        Object.values(this.#scopes[`nodes`]).forEach((node)=>{
+            //let da = node.node.update({element:this,key:node})
+            if (!node.active)return;
+            let da = node.runNode(delta,...node.info);
             if (!da)return;
-            for (let i in da)
-            {
-                node[i] = da[i];
-            }
+            Object.assign(node,da);
         });
     }
     setToUi(){
@@ -229,14 +256,14 @@ export class baseElement{
         Object.assign(this.#scopes[`properties`],properties);
         Object.assign(this.#scopes[`renderer`],renderer);
         Object.assign(this.#scopes[`hitbox`],hitbox)
-        this.#scopes[`properties`].id = Symbol();
+        this.#scopes[`properties`].id = game.generateId();
         this.setup();
         
         let setup = (typeof allNodes[allNodes.length-1] == `function`) ? allNodes.pop() : false;
         this.insertMultipleNodes(...allNodes);
-        if (setup)setup(this);
+        if (setup)setup.call(this, allNodes.length, game.presets.system_presets.element.length);
 
-        this.insertMultipleNodes(...eventNode.system_presets.element);
+        this.add(...game.presets.system_presets.element);
         this.#internal_setup();
     }
 }

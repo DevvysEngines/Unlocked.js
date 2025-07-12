@@ -6,6 +6,8 @@ export function frame(timestamp=0){
     const deltatime = timestamp - game.time;
     game.time = timestamp;
 
+    //console.log(deltatime/1000*3600)
+
     game.ctx.clearRect(0,0,game.window.width,game.window.height);
 
     game.currentscene.update(deltatime);

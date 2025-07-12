@@ -13,7 +13,7 @@ export class camera{
         const chunk = game.currentscene.locateChunkByPos(this.x,this.y)
         const chunkpos = {x:chunk.pos.x,y:chunk.pos.y};
         const mychunkpos = this.chunk;
-        if (chunkpos.x!=mychunkpos.x&&chunkpos.y!=mychunkpos.y){
+        if (chunkpos.x!=mychunkpos.x||chunkpos.y!=mychunkpos.y){
             this.chunk = chunkpos;
             console.log(chunkpos);
         }

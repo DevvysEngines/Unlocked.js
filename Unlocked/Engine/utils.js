@@ -45,6 +45,7 @@ export class utils{
     }
     static normalizePath(path){
         let newpath = [];
+        if (!Array.isArray(path))path=[path];
         path.forEach((newstr)=>{
             if (typeof newstr == `string`)
             {
