@@ -28,9 +28,9 @@ function enadisNodeBy(element,tag,ttype,type){
 
 function thisUsed(node,element,str){
     return (...args) => {
-        element.currentNode=node;
+        element.system_set_currentNode(node);
         let call = node.node[str].call(element, ...args);
-        element.currentNode=undefined;
+        element.system_remove_currentNode();
         return call;
     }
 }

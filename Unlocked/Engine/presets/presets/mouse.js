@@ -4,6 +4,7 @@ let en = eventNode;
 let mT = [`mouse`]
 
 function mouseFn(v,fn,...args){ // when the mouse leaves or enters
+    //console.log(this.currentNode);
     let call = fn.call(this,...args);
     if (call){if(call.info)call.info.unshift(fn)};
     return call;

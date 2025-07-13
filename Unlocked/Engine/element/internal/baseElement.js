@@ -60,6 +60,7 @@ export class baseElement{
     }
     isElement=true;
     isDestroyed=false;
+    #nodeStack=[];
     #internal_setup(){
         let r = this.#scopes[`renderer`];
         let p = this.#scopes[`properties`];
@@ -77,6 +78,15 @@ export class baseElement{
             this.set(`renderer/width`,this.Width);
             this.set(`renderer/height`,this.dime.fontsize);
         }
+    }
+    get currentNode(){
+        return this.#nodeStack[this.#nodeStack.length-1];
+    }
+    system_set_currentNode(node){
+        this.#nodeStack[this.#nodeStack.length] = node;
+    }
+    system_remove_currentNode(){
+        this.#nodeStack.pop();
     }
     get textWidth(){
         let dime = this.dime;
