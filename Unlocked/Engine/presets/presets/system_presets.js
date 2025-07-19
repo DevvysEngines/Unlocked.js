@@ -13,7 +13,9 @@ function urp(path,[ov,v]){ // update renderer property
 }
 function pc(type){ // position changed
     let chunk = this.chunk;
+    if (!chunk)return;
     let newchunk = game.currentscene.locateChunkByPos(this.x,this.y);
+    if (!newchunk)return;
     if (chunk.pos[type]!=newchunk.pos[type]){
         game.currentscene.moveElementToChunk(this,newchunk);
     }

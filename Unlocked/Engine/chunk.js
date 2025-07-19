@@ -3,6 +3,7 @@ import { utils } from "./utils.js";
 
 export class chunk{
     constructor(scene,x,y){
+        
         this.pos = {x,y};
         this.scene = scene;
         this.x = this.pos.x*this.scene.chunkSize;

@@ -3,8 +3,8 @@ export class camera{
     y=0;
     zoom=1;
     rotation=0;
-    chunk={x:1,y:1};
-    show={width:1,height:1};
+    chunk={x:0,y:0};
+    show={width:100,height:100};
     constructor(scene){
         scene.addCamera(this);
     }

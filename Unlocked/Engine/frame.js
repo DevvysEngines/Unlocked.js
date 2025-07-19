@@ -11,13 +11,13 @@ export function frame(timestamp=0){
     game.ctx.clearRect(0,0,game.window.width,game.window.height);
 
     game.currentscene.update(deltatime);
-    for (let [key,value] of game.currentscene.uiList){
+    for (let value in Object.values(game.currentscene.uiList)){
         value.update(deltatime, deltatime*60/1000);
     }
 
     game.currentscene.render(game.ctx);
 
-    for (let [key,value] of game.currentscene.uiList){
+    for (let value in Object.values(game.currentscene.uiList)){
         game.ctx.beginPath();
         game.ctx.fillStyle = `rgb(${value.color})`;
         value.render(game.ctx);

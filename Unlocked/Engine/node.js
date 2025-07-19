@@ -9,8 +9,8 @@ export class node{
         ,onFinished:function(){}
         ,type:`node`
     }
-    constructor(Name, tags, onApply, update, onFinished){
-        if (typeof Name !== `object`){Name={Name, tags, onApply, update, onFinished, type:`node`};}
+    constructor(Name, tags, update, onApply, onFinished){
+        if (typeof Name !== `object`){Name={Name, tags, update, onApply, onFinished, type:`node`};}
         Object.assign(
             this
             ,{...this.#defaults}

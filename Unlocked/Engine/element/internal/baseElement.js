@@ -1,5 +1,4 @@
 import { game } from "../../engine.js";
-import { eventNode } from "../../events/eventNode.js";
 import { types } from "../../types.js";
 import { utils } from "../../utils.js";
 
@@ -79,8 +78,22 @@ export class baseElement{
             this.set(`renderer/height`,this.dime.fontsize);
         }
     }
+    get scopes(){
+        return JSON.parse(JSON.stringify({...this.#scopes}));
+    }
     get currentNode(){
         return this.#nodeStack[this.#nodeStack.length-1];
+    }
+    get linked(){
+        if (!this.currentNode)return;
+        if (!this.currentNode.linked)return [];
+        return Object.keys(this.currentNode.linked);
+    }
+    get secondaryNode(){
+        if (!this.currentNode)return;
+        let link = this.linked[0];
+        if (!link) return;
+        return this.anyNodeById(link);
     }
     system_set_currentNode(node){
         this.#nodeStack[this.#nodeStack.length] = node;
@@ -107,7 +120,8 @@ export class baseElement{
         return utils.giveColorWithTables(this.#scopes[`renderer`].color,this.#scopes[`renderer`].transparency);
     }
     get chunk(){
-        return game.currentscene.giveChunk(this.#scopes[`properties`].chunk.x,this.#scopes[`properties`].chunk.y);
+        let c = this.#scopes[`properties`].chunk;
+        return game.currentscene.giveChunk(c.x,c.y);
     }
     get id(){
         return this.#scopes[`properties`].id
@@ -191,10 +205,13 @@ export class baseElement{
             if (path.length<=0)return [value,undefined,centeral];
         }
         for (let i = 0; i<path.length-1; i++){
-            if (!current[path[i]])current[path[i]] = {};
+            if (typeof current[path[i]] !== 'object' || current[path[i]] === null) {
+                current[path[i]] = {};
+            }
             current = current[path[i]];
         }
         oldvalue = current[path[path.length-1]];
+        //console.log(path[path.length-1]);
         current[path[path.length-1]] = value;
         return [value, oldvalue, centeral, ...path];
     }
@@ -211,17 +228,17 @@ export class baseElement{
         return this.system_get(path)!==undefined
     }
     destroy(){
+        game.removeElement(this);
         this.isDestroyed=true
         this.customdestroy()
-        game.removeElement(this);
-        Object.values(this.#scopes[`nodes`]).forEach((node)=>{this.deleteNode(node)})
         
+        this.#scopes[`reactionsList`] = {};
+        this.#scopes[`reactions`] = {};
+        this.#scopes[`nodes`] = {};
+
         for (let i in this){
-            this[i] = undefined;
+            //this[i] = undefined;
         }
-        this.#scopes[`properties`] = {};
-        this.#scopes[`renderer`] = {};
-        this.#scopes[`hitbox`] = {};
     }
     batchSet(...paths){
         paths.forEach((path)=>{
@@ -254,11 +271,11 @@ export class baseElement{
         if (this.#scopes[`properties`].inUi)return;
         this.set(`properties/inUi`,true);
         if (this.chunk) this.chunk.removeElement(this);
-        game.currentscene.uiList.set(this.id,this);
+        game.currentscene.uiList[this.id] = this;
     }
     removeFromUi(){
         if (!this.#scopes[`properties`].inUi)return;
-        game.currentscene.uiList.delete(this.id);
+        delete game.currentscene.uiList[this.id];
         game.currentscene.addElement(this);
     }
     setup(){};customdestroy(){};customupdate(){};
@@ -270,10 +287,10 @@ export class baseElement{
         this.setup();
         
         let setup = (typeof allNodes[allNodes.length-1] == `function`) ? allNodes.pop() : false;
-        this.insertMultipleNodes(...allNodes);
-        if (setup)setup.call(this, allNodes.length, game.presets.system_presets.element.length);
-
+        this.add(...allNodes);
+        
         this.add(...game.presets.system_presets.element);
         this.#internal_setup();
+        if (setup)setup.call(this, allNodes.length, game.presets.system_presets.element.length);
     }
 }

@@ -1,5 +1,7 @@
 import { game } from "./engine.js";
 
+let cachedPaths = {};
+
 export class utils{
     static aroundChunk(fn=()=>{},x,y,ts){
         const camera = game.currentscene.camera;
@@ -7,9 +9,10 @@ export class utils{
         y = y ?? camera.chunk.y;
         ts = ts ?? camera.show;
         for (let i = ts.width; i>=-ts.width; i--){
-            if (game.currentscene.ifChunk(x-i,y)){
+            //if (game.currentscene.ifChunk(x-i,y)){
                 for (let v = ts.height; v>=-ts.height; v--){
                     if (game.currentscene.ifChunk(x-i,y-v)){
+                        //console.log(i,v,game.currentscene.giveChunk(x-i,y-v),game.currentscene.ifChunk(x-i,y-v))
                         fn({
                             chunk: game.currentscene.giveChunk(x-i,y-v)
                             ,i
@@ -18,7 +21,7 @@ export class utils{
                         })
                     }
                 }
-            }
+            //}
         }
     }
     static giveColorWithTables(color,transparency){
@@ -46,19 +49,27 @@ export class utils{
     static normalizePath(path){
         let newpath = [];
         if (!Array.isArray(path))path=[path];
+        //let jPath = path.join(`,`);
+        //let cPath = cachedPaths[jPath];
+        //if (cPath)return cPath;
         path.forEach((newstr)=>{
             if (typeof newstr == `string`)
             {
+                /*
                 newstr = newstr.replaceAll(`.`, `/`);
                 newstr = newstr.replaceAll(`[`, `/`);
                 newstr = newstr.replaceAll(`]`, ``);
                 newstr = newstr.split(`/`);
+                */
+                newstr = newstr.split(/[.\[\]\/]+/).filter(s => s.length);
                 newpath.push(...newstr);
             } else {
                 newpath.push(newstr);
             }
         })
-        return newpath;
+        //console.log(newpath, jPath, path)
+        //cachedPaths[jPath] = newpath;
+        return [...newpath];
     }
     static givefont(size=16,style=`sans-serif`,type=``){
         return (`${style} ${size}px ${type}`); // bold ${13/(game.hud ? 1:camera.zoom)}px sans-serif
@@ -80,5 +91,9 @@ export class utils{
         newpos.x+=xorigin;
         newpos.y+=yorigin;
         return newpos;
+    }
+    static measureText(text,renderer){
+        game.ctx.font = utils.givefont(renderer.fontsize,renderer.fonttype,renderer.fontstyle);
+        return game.ctx.measureText(text).width
     }
 }

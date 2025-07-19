@@ -4,9 +4,26 @@ let nodeScopes = {
     "node": "insertNode"
     ,"eventNode": "insertEventNode"
 }
+let newNodeScopes ={
+    node:`do`
+    ,eventNode:`on`
+}
 let removeScopes = {
     node:`deleteNode`
     ,eventNode:`deleteEventNode`
+}
+
+function idCheck(id, element){
+    if (typeof id == `string`)return element.anyNodeById(id);
+    return id;
+}
+
+function nodeCheck(element,...allNodes){
+    if (allNodes.length==0||allNodes==undefined){if(element.currentNode)return [element.currentNode,...element.linked]; else return;} else return allNodes;
+}
+
+function warnCtx(fn){
+    console.warn(`NO CONTEXT FOUND. Please provide more information in the ${fn} call.`)
 }
 
 function endisNode(element, id=``,type){
@@ -47,7 +64,6 @@ export function nHan(sCls){
             return results;
         }
         insertEventNode(node,...info){
-            let element = this;
             let id = game.generateId();
             let renode = {
                 node
@@ -80,13 +96,16 @@ export function nHan(sCls){
                 Object.assign(renode, app);
             }
             return id;
-            }
-        do = this.insertNode.bind(this);
+        }
+        do(node,...info){
+            return this.insertNode(node,...info);
+        }
         add(...allNodes){
             let results = [];
             if (allNodes.length<=0)return
             allNodes.forEach((node)=>{
-                let type = nodeScopes[node[0].type] || `on`;
+                if (!Array.isArray(node))node = [node];
+                let type = newNodeScopes[node[0].type]
                 results.push(this[type](...node));
             })
             return results;
@@ -102,7 +121,6 @@ export function nHan(sCls){
                         cnode = inf.shift();
                     }
                     path = pathOrNode;
-                    if (!Array.isArray(path))path=[path]
                     node = new game.eventNode(cnode.Name,cnode.tags,condition ? condition:cnode.condition,cnode.trigger,cnode.triggerTimes,cnode.onApply,cnode.onFinished);
                     info = inf ?? [];
 
@@ -115,26 +133,42 @@ export function nHan(sCls){
 
             return this.insertEventNode(node,...info);
         }
-        remove(id=this.currentNode){
-            if (!id)return;
-            if (typeof id==`string`)id=this.anyNodeById(id);
-            this[removeScopes[id.node.type]](id);
+        remove(...allNodes){
+            allNodes = nodeCheck(this,...allNodes);
+            if (!allNodes){warnCtx(`remove`);return;};
+            allNodes.forEach((id)=>{
+                id = idCheck(id,this);
+                this[removeScopes[id.node.type]](id);
+            })
         }
         deleteNode(node){
             thisUsed(node,this,`onFinished`)(...node.info);
+            this.unlink(...Object.keys(node.linked))
             this.delete(`nodes/${node.id}`)
         }
         deleteEventNode(event){
+            thisUsed(event,this,`onFinished`)(...event.info);
+            this.unlink(...Object.keys(event.linked));
             this.delete("reactions",...event.node.path,"events",event.id);
             this.delete(`reactionsList/${event.id}`);
-            thisUsed(event,this,`onFinished`)(...event.info);
         }
-        enable(id=``){
-            return endisNode(this,id,true);
+        enable(...allNodes){
+            allNodes = nodeCheck(this,...allNodes);
+            if (!allNodes){warnCtx(`enable`);return;};
+            let results = [];
+            allNodes.forEach((id)=>{
+                results.push(endisNode(this,idCheck(id,this),true));
+            })
+            return results;
         }
-        disable(id=this.currentNode){
-            if (!id)return;
-            return endisNode(this,id,false);
+        disable(...allNodes){
+            allNodes = nodeCheck(this,...allNodes);
+            if (!allNodes){warnCtx(`disable`);return;};
+            let results = [];
+            allNodes.forEach((id)=>{
+                results.push(endisNode(this,idCheck(id,this),false));
+            })
+            return results;
         }
         enableNodeByTag(tag=``){
             return enadisNodeBy(this,tag,`Tag`,true);
@@ -147,6 +181,38 @@ export function nHan(sCls){
         }
         disableNodeByName(name=``){
             return enadisNodeBy(this,name,`Name`,false);
+        }
+        link(...allNodes){
+            allNodes = allNodes.map((node)=>{return idCheck(node,this)});
+            if (allNodes.length==1){if (this.currentNode){allNodes.push(this.currentNode)}else{console.warn(`NO CONTEXT FOUND. Please provide a target node at the end of a link call.`);return;}};
+            let target = allNodes.pop();
+            let tid = target.id;
+            if (!this.anyNodeById(tid)){console.warn(`Please provide a target node that has already been ADDED to the element.`);return;};
+            if (!target.linked)target.linked={};
+            allNodes.forEach((node)=>{
+                let id = node.id
+                if (!this.anyNodeById(id))return;
+                if (!node.linked)node.linked={};
+                if (target.linked[id]||node.linked[tid])return;
+                target.linked[id] = true;
+                node.linked[tid] = true;
+            })
+        }
+        unlink(...allNodes){
+            allNodes = allNodes.map((node)=>{return idCheck(node,this)});
+            if (allNodes.length==1){if (this.currentNode){allNodes.push(this.currentNode)}else{console.warn(`NO CONTEXT FOUND. Please provide a target node at the end of an unlink call.`);return;}};
+            let target = allNodes.pop();
+            let tid = target.id;
+            if (!target.linked)return;
+            if (!this.anyNodeById(tid)){console.warn(`Please provide a target node that has already been ADDED to the element.`);return;};
+            allNodes.forEach((node)=>{
+                let id = node.id
+                if (!target.linked)return;
+                if (!this.anyNodeById(id))return;
+                if (!target.linked[id]&&!node.linked[tid])return;
+                delete target.linked[id];
+                delete node.linked[tid];
+            })
         }
     }
 }

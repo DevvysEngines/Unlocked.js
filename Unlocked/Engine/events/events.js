@@ -19,7 +19,7 @@ export class events{
         game.ctx.textAlign = `center`;
     };
     static keyboard(info){
-        
+        //
         switch(info.key){
             case `w`:
                 game.currentscene.camera.y-=5;
@@ -40,6 +40,7 @@ export class events{
                 game.currentscene.camera.zoom-=1/4;
                 break;
         }
+                //
                 
         events.mousemove();
     }
@@ -47,7 +48,7 @@ export class events{
         game.mouse.x = info.x;
         game.mouse.y = info.y;
         let isover = false;
-        for (let [k,v] of game.currentscene.uiList){
+        for (let v in Object.values(game.currentscene.uiList)){
             if (v.ifover(info.x,info.y)){
                 v.set(`mouse/over`,true);
                 isover = true;
@@ -78,7 +79,7 @@ export class events{
     static mousedown(info){
         let lor = info.button == 0 ? `left`: info.button==1 ? `middle`:`right`;
         if (lor==`middle`)info.preventDefault();
-        for (let [k,v] of game.currentscene.uiList){
+        for (let v in Object.values(game.currentscene.uiList)){
             if (v.ifover(info.x,info.y)){
                 v.set(`mouse/${lor}/down`,true);
                 v.set(`mouse/${lor}/dragging`,true);
@@ -97,7 +98,7 @@ export class events{
     static mouseup(info){
         let lor = info.button == 0 ? `left`: info.button==1 ? `middle`:`right`;
         if (lor==`middle`)info.preventDefault();
-        for (let [k,v] of game.currentscene.uiList){
+        for (let v in Object.values(game.currentscene.uiList)){
             if (v.ifover(info.x,info.y)){
                 if (v.ifover(info.x,info.y)&&v.get(`mouse/${lor}/down`)==true){
                     v.set(`mouse/${lor}/down`,false);

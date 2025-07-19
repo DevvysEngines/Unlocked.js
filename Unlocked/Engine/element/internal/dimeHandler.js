@@ -4,14 +4,14 @@ import { utils } from "../../utils.js";
 export function dHan(sCls){
     return class extends sCls{
         get dime(){
-            const r = this.get(`renderer`);
-            const p = this.get(`properties`);
+            const r = this.system_get([`renderer`])
+            const p = this.system_get([`properties`])
             if (p.ui){
                 return {
                     x: Math.round(p.x+r.x)
                     ,y: Math.round(p.y+r.y)
                     ,width: Math.round(r.width)
-                    ,height: Math.round(r.width)
+                    ,height: Math.round(r.height)
                     ,radius: Math.round(r.radius)
                     ,fontsize: r.fontsize
                     ,rotation: r.rotation
@@ -30,7 +30,7 @@ export function dHan(sCls){
             }
         }
         get hitboxDime(){
-            let h = this.get(`hitbox`);
+            let h = this.system_get([`hitbox`]);
             return {
                 x: this.x+h.x
                 ,y: this.y+h.y

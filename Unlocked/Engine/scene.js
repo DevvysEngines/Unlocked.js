@@ -7,33 +7,31 @@ export class scene{
     constructor(Name){
         this.Name = Name;
         this.game = game;
-        this.chunks = new Map();
-        this.uiList = new Map();
+        this.chunks = {};
+        this.uiList = {};
         this.chunkSize = 600;
         this.addCamera(new camera(this));
-        for (let i = 0; i<30; i++){
-            for (let v = 0; v<30; v++){
-                this.insertChunk(i,v);
-            }
-        }
     }
     ifChunk(x,y){
-        if (this.chunks.has(`${x},${y}`)){
-            return true;
-        }
+        if (!this.chunks[`${x}`])return;
+        if (!this.chunks[`${x}`][`${y}`])return;
+        return true;
     }
     moveElementToChunk(element,newchunk){
         element.chunk.removeElement(element);
         newchunk.addElement(element);
     }
     giveChunk(x,y){
-        if (this.ifChunk(x,y)){
-            return this.chunks.get(`${x},${y}`);
+        if (!this.ifChunk(x,y)){
+            this.insertChunk(x,y);
         }
+        //console.log(this.ifChunk(x,y));
+        return this.chunks[`${x}`][`${y}`];
     }
     insertChunk(x,y){
         if (this.ifChunk(x,y))console.warn(`STOP MAKING CHUNKS IN ${x},${y}`)
-        this.chunks.set(`${x},${y}`,new chunk(this,x,y))
+        if (!this.chunks[`${x}`]);this.chunks[`${x}`]={};
+        this.chunks[`${x}`][`${y}`] = new chunk(this,x,y)
     }
     locateChunkByPos(x,y){
         const newX = Math.floor(x/this.chunkSize);

@@ -10,11 +10,11 @@ export let effect = class {
         this.type = this.node.type;
     }
     onApply(time=1, ...info){
-        time=utils.tosec(time)*1000/16.6666;
+        time*=60//utils.tosec(time)*1000/16.6666;
         let app = this.currentNode.node.node.onApply.call(this,...info);
         if (app){
             if (!app.info){app.info=[];}
-            app.info.unshift(time);
+            app.info = [time,...app.info]
             return app;
         };
         return {info:[time,...info]};
@@ -24,11 +24,11 @@ export let effect = class {
             this.remove();
             return;
         }
-        time-=utils.tosec(1*delta);
+        time-=delta;
         let upd = this.currentNode.node.node.update.call(this, delta, ...info);
         if (upd){
             if (!upd.info){upd.info=[];}
-            upd.info.unshift(time);
+            upd.info = [time,...upd.info];
             return upd;
         }
         return {info:[time,...info]};
@@ -37,7 +37,7 @@ export let effect = class {
         let fin = this.currentNode.node.node.onFinished.call(this,...info);
         if (fin){
             if (!fin.info){fin.info=[]};
-            fin.info.unshift(time);
+            fin.info = [time,...fin.info];
             return fin;
         }
     }

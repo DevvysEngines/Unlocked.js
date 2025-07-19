@@ -1,4 +1,5 @@
 import { eventNode } from "../../events/eventNode.js";
+import { node } from "../../node.js";
 let en = eventNode;
 
 let mT = [`mouse`]
@@ -9,10 +10,10 @@ function mouseFn(v,fn,...args){ // when the mouse leaves or enters
     return call;
 }
 
-function sumt(fn,...info){ // sets uses mouse true
+function sumt(fn){ // sets uses mouse true
     this.set(`properties/usesMouse`,true);
     if (!fn){
-        return {info:[function(){},...info]}
+        return {info:[function(){}]}
     }
 }
 
@@ -22,10 +23,51 @@ function rfum(){ // removes from uses mouse
     }
 }
 
+/*
+
+function makeItWork(element, ){
+
+}
+
+Dragging: new en({
+    condition(ov,v){
+        return v; 
+    }
+    trigger(v,...args){
+        this.do(
+            new game.node({
+                update:mouseFn
+            }
+            ,...args
+        )
+    }
+})
+
+
+*/
+
+let mainDrag = new node({
+    update(delta, fn, ...args){
+        fn.call(this, ...args)
+    }
+})
+
+
 function rpths(path){ // returns paths
     return {
         Down: new en(`mouseDown`,[`mouse/presets/down/${path}`],[`mouse/${path}/down`],rv,...mE)
         ,Up: new en(`mouseUp`,[`mouse/presets/up/${path}`],[`mouse/${path}/down`],rov,...mE)
+        ,Dragging: new en({
+            path:[`mouse/${path}/dragging`]
+            ,condition:rv
+            ,trigger(){
+                this.do(
+
+                )
+            }
+            ,onApply:sumt
+            ,onFinished:rfum
+        })
     }
 }
 

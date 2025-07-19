@@ -13,7 +13,7 @@ export class types{
     }
     static arc = {
         render: (ctx,dime)=>{
-            ctx.arc(0,0,dime.radius,0,360)
+            ctx.arc(0,0,dime.radius,0,2*Math.PI);
             ctx.closePath();
         }
         ,ifover(x,y,hd){
@@ -26,7 +26,8 @@ export class types{
             ctx.fillText(renderer.string, 0, dime.fontsize/4)
         }
         ,ifover(x,y,hd,hb,element){
-            return types[`box`].ifover(x,y,{x:hd.x,y:hd.y,width:element.textWidth,height:element.dime.fontsize});
+            //x:hd.x,y:hd.y,width:element.textWidth,height:element.dime.fontsize
+            return types[`box`].ifover(x,y,hd);
         }
     }
 }

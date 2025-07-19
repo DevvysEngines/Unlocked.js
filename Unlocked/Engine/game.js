@@ -45,7 +45,7 @@ export class Game{
         }
     }
     generateId = function(length = 28){
-        const chars = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890,-=+_|!@#$%^&*()<>`;
+        const chars = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-=+_|!@#$%^&*()<>`;
         let result = ``;
         for (let i=0; i<length-4; i++){
             result+=chars.charAt(Math.floor(Math.random()*chars.length));
